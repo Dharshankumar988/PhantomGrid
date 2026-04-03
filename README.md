@@ -5,7 +5,6 @@ A futuristic full-stack cybersecurity dashboard built with **FastAPI** that anal
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-API-green)
 ![Vercel](https://img.shields.io/badge/Deploy-Vercel-black)
-![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ---
 
