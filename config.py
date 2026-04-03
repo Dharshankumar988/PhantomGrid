@@ -1,10 +1,15 @@
 import os
+from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
 from supabase import Client, create_client
 
 load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+TEMPLATES_DIR = BASE_DIR / "templates"
 
 ABUSE_API_KEY = os.getenv("ABUSE_API_KEY", "")
 VT_API_KEY = os.getenv("VT_API_KEY", "")

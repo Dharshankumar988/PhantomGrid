@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from config import CACHE_TTL_SECONDS, get_supabase_client
+from config import CACHE_TTL_SECONDS, TEMPLATES_DIR, get_supabase_client
 from models.schemas import ScanRequest, ThreatAnalysisResponse
 from services.abuseipdb import fetch_abuseipdb
 from services.geo import fetch_geolocation
@@ -19,7 +19,7 @@ from utils.confidence import calculate_confidence_score
 from utils.scorer import calculate_risk_score, get_risk_level
 from utils.summary import generate_summary
 
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 router = APIRouter()
 
 _cache: dict[str, tuple[float, dict[str, Any]]] = {}
