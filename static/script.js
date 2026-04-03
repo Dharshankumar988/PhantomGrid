@@ -240,7 +240,10 @@ function renderResult(data) {
 }
 
 function formatHistoryItem(item) {
-  return `${item.target} | ${item.risk_level} (${item.risk_score}) | ${item.detection?.malicious || 0}/${item.detection?.total_engines || 0}`;
+  const usedInput = item.source_input && String(item.source_input).trim().length > 0
+    ? item.source_input
+    : item.target;
+  return `${usedInput} | ${item.risk_level} (${item.risk_score}) | ${item.detection?.malicious || 0}/${item.detection?.total_engines || 0}`;
 }
 
 async function loadHistory() {

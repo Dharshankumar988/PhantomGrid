@@ -4,11 +4,19 @@ import socket
 import time
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+import httpx
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from config import CACHE_TTL_SECONDS, TEMPLATES_DIR, get_supabase_client
+from config import (
+    CACHE_TTL_SECONDS,
+    REQUEST_TIMEOUT_SECONDS,
+    SUPABASE_KEY,
+    SUPABASE_URL,
+    TEMPLATES_DIR,
+    get_supabase_client,
+)
 from models.schemas import ScanRequest, ThreatAnalysisResponse
 from services.abuseipdb import fetch_abuseipdb
 from services.geo import fetch_geolocation
@@ -24,6 +32,48 @@ router = APIRouter()
 
 _cache: dict[str, tuple[float, dict[str, Any]]] = {}
 _cache_lock = asyncio.Lock()
+
+MOCK_THREAT_PROFILES: dict[str, dict[str, Any]] = {
+    "demo-high-risk.phantomgrid.test": {
+        "risk_score": 92,
+        "confidence_score": 89,
+        "threat_categories": ["Malware", "Phishing", "Botnet"],
+        "detection": {"malicious": 58, "total_engines": 70},
+        "geolocation": {
+            "country": "United States",
+            "city": "Ashburn",
+            "isp": "Mock Security ASN",
+            "latitude": 39.0438,
+            "longitude": -77.4874,
+        },
+    },
+    "phishing-bank-alert.phantomgrid.test": {
+        "risk_score": 86,
+        "confidence_score": 84,
+        "threat_categories": ["Phishing", "Spam"],
+        "detection": {"malicious": 47, "total_engines": 70},
+        "geolocation": {
+            "country": "Germany",
+            "city": "Frankfurt",
+            "isp": "Mock Financial Relay",
+            "latitude": 50.1109,
+            "longitude": 8.6821,
+        },
+    },
+    "botnet-c2.phantomgrid.test": {
+        "risk_score": 95,
+        "confidence_score": 91,
+        "threat_categories": ["Botnet", "Malware"],
+        "detection": {"malicious": 63, "total_engines": 70},
+        "geolocation": {
+            "country": "Netherlands",
+            "city": "Amsterdam",
+            "isp": "Mock Command Relay",
+            "latitude": 52.3676,
+            "longitude": 4.9041,
+        },
+    },
+}
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -48,42 +98,134 @@ async def _resolve_domain_to_ip(domain: str) -> str | None:
 
 def _store_scan_history(payload: dict[str, Any]) -> None:
     client = get_supabase_client()
-    if not client:
-        return
+    if client:
+        try:
+            client.table("scan_history").insert(payload).execute()
+            return
+        except Exception:
+            pass
 
     try:
-        client.table("scan_history").insert(payload).execute()
+        _insert_history_via_rest(payload)
+        return
+    except Exception:
+        pass
+
+    fallback_payload = dict(payload)
+    fallback_payload.pop("source_input", None)
+
+    if client:
+        try:
+            client.table("scan_history").insert(fallback_payload).execute()
+            return
+        except Exception:
+            pass
+
+    try:
+        _insert_history_via_rest(fallback_payload)
     except Exception:
         return
+
+
+def _supabase_rest_headers() -> dict[str, str]:
+    return {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+    }
+
+
+def _insert_history_via_rest(payload: dict[str, Any]) -> None:
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return
+
+    url = f"{SUPABASE_URL}/rest/v1/scan_history"
+    headers = _supabase_rest_headers()
+    headers["Prefer"] = "return=minimal"
+
+    with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:
+        response = client.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+
+
+def _fetch_history_via_rest(limit: int) -> list[dict[str, Any]]:
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return []
+
+    safe_limit = max(1, min(limit, 100))
+    url = f"{SUPABASE_URL}/rest/v1/scan_history?select=*&order=id.desc&limit={safe_limit}"
+    headers = _supabase_rest_headers()
+
+    with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:
+        response = client.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        if isinstance(data, list):
+            return data
+        return []
+
+
+def _build_mock_result(normalized_target: str, source_input: str, profile: dict[str, Any]) -> dict[str, Any]:
+    result = {
+        "target": normalized_target,
+        "source_input": source_input,
+        "risk_score": int(profile["risk_score"]),
+        "confidence_score": int(profile["confidence_score"]),
+        "risk_level": get_risk_level(int(profile["risk_score"])),
+        "threat_categories": list(profile["threat_categories"]),
+        "detection": dict(profile["detection"]),
+        "geolocation": dict(profile["geolocation"]),
+        "summary": "",
+    }
+
+    result["summary"] = generate_summary(result)
+    if result["risk_score"] > 80:
+        result["summary"] = f"ALERT: {result['summary']}"
+
+    return result
 
 
 @router.get("/history")
 async def scan_history(limit: int = 20):
     client = get_supabase_client()
-    if not client:
-        return []
+
+    if client:
+        try:
+            response = (
+                client.table("scan_history")
+                .select("*")
+                .order("id", desc=True)
+                .limit(max(1, min(limit, 100)))
+                .execute()
+            )
+            return response.data or []
+        except Exception:
+            pass
 
     try:
-        response = (
-            client.table("scan_history")
-            .select("*")
-            .order("id", desc=True)
-            .limit(max(1, min(limit, 100)))
-            .execute()
-        )
-        return response.data or []
+        return _fetch_history_via_rest(limit)
     except Exception:
         return []
 
 
 @router.post("/analyze", response_model=ThreatAnalysisResponse)
 async def analyze(data: ScanRequest):
-    target = data.target.strip().lower()
+    source_input = data.target.strip()
+    target = ScanRequest.normalize_target(source_input)
 
     async with _cache_lock:
         cached = _cache.get(target)
         if cached and (time.time() - cached[0] < CACHE_TTL_SECONDS):
             return cached[1]
+
+    if target in MOCK_THREAT_PROFILES:
+        result = _build_mock_result(target, source_input, MOCK_THREAT_PROFILES[target])
+        await asyncio.to_thread(_store_scan_history, result)
+
+        async with _cache_lock:
+            _cache[target] = (time.time(), result)
+
+        return result
 
     target_type = _target_type(target)
     resolved_ip = target if target_type == "ip" else await _resolve_domain_to_ip(target)
@@ -113,6 +255,7 @@ async def analyze(data: ScanRequest):
 
     result = {
         "target": target,
+        "source_input": source_input,
         "risk_score": risk_score,
         "confidence_score": confidence_score,
         "risk_level": risk_level,

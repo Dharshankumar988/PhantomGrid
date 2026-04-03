@@ -10,34 +10,37 @@ DOMAIN_REGEX = re.compile(
 
 
 class ScanRequest(BaseModel):
-    target: str = Field(..., description="IP address or domain")
+    target: str = Field(..., description="IP address, domain, or URL")
 
     @staticmethod
-    def _extract_host(candidate: str) -> str:
-        parsed = urlparse(candidate)
+    def normalize_target(candidate: str) -> str:
+        value = candidate.strip()
+        if not value:
+            return ""
+
+        parsed = urlparse(value)
         if parsed.hostname:
             return parsed.hostname.strip().lower()
-        return candidate
+
+        return value.lower()
 
     @field_validator("target")
     @classmethod
     def validate_target(cls, value: str) -> str:
-        target = value.strip()
-        if not target:
+        raw_target = value.strip()
+        if not raw_target:
             raise ValueError("Target is required")
 
-        if "://" in target or target.startswith("//"):
-            target = cls._extract_host(target)
-
-        if not target:
+        normalized = cls.normalize_target(raw_target)
+        if not normalized:
             raise ValueError("Target is required")
 
         try:
-            ipaddress.ip_address(target)
-            return target
+            ipaddress.ip_address(normalized)
+            return raw_target
         except ValueError:
-            if DOMAIN_REGEX.match(target):
-                return target.lower()
+            if DOMAIN_REGEX.match(normalized):
+                return raw_target
 
         raise ValueError("Target must be a valid IP address, domain, or URL")
 

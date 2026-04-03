@@ -1,6 +1,7 @@
 create table if not exists public.scan_history (
   id bigint generated always as identity primary key,
   created_at timestamptz not null default now(),
+  source_input text,
   target text not null,
   risk_score integer not null check (risk_score >= 0 and risk_score <= 100),
   confidence_score integer not null check (confidence_score >= 0 and confidence_score <= 100),
@@ -10,6 +11,8 @@ create table if not exists public.scan_history (
   geolocation jsonb not null default '{}'::jsonb,
   summary text not null
 );
+
+alter table public.scan_history add column if not exists source_input text;
 
 create index if not exists scan_history_created_at_idx on public.scan_history (created_at desc);
 create index if not exists scan_history_target_idx on public.scan_history (target);

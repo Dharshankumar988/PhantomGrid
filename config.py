@@ -1,4 +1,4 @@
-import os
+﻿import os
 from pathlib import Path
 from typing import Optional
 
@@ -8,22 +8,20 @@ from supabase import Client, create_client
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
-STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
-
-ABUSE_API_KEY = os.getenv("ABUSE_API_KEY", "")
+STATIC_DIR = BASE_DIR / "static"
+CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "300"))
+REQUEST_TIMEOUT_SECONDS = int(os.getenv("REQUEST_TIMEOUT_SECONDS", "10"))
 VT_API_KEY = os.getenv("VT_API_KEY", "")
 OTX_API_KEY = os.getenv("OTX_API_KEY", "")
+ABUSE_API_KEY = os.getenv("ABUSE_API_KEY", "")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
-
-REQUEST_TIMEOUT_SECONDS = 15
-CACHE_TTL_SECONDS = 600
 
 _supabase_client: Optional[Client] = None
 
 
-def get_supabase_client() -> Optional[Client]:
+def get_supabase_client():
     global _supabase_client
     if _supabase_client is not None:
         return _supabase_client
