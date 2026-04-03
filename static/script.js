@@ -322,7 +322,7 @@ function buildHistoryRow(item) {
 }
 
 function decodeObfuscatedCredit() {
-  const payload = [27, 41, 27, 38, 203, 220, 218, 213, 51, 228, 26, 239, 248, 235, 211, 4, 241, 59, 4, 40, 247, 11, 7, 220, 16, 238, 234, 20, 61, 12, 39, 54, 57, 57, 242, 224, 58, 34, 32, 14, 68, 185, 82, 108, 144, 167, 88, 79, 139, 93, 95, 157, 126, 73, 68, 106, 205, 179, 168, 167, 204, 361, 395, 400, 427, 317, 369, 434, 327, 409, 322, 323, 344, 417, 418, 376, 327, 375, 334, 420, 359, 353, 326, 272, 314, 377, 271, 278, 295, 298, 276, 277, 311, 485, 270, 288, 293, 316];
+  const payload = [40, 200, 199, 242, 228, 216, 210, 48, 197, 194, 18, 86, 189, 34, 249, 4, 249, 240, 45, 29, 15, 180, 224, 244, 239, 247, 248, 245, 238, 43, 146, 193, 213, 211, 209, 209, 137, 209, 233, 219, 131, 164, 175, 174, 189, 132, 188, 129, 190, 177, 229];
   return payload
     .map((value, index) => {
       const decoded = (value ^ (73 + index * 3)) - 17 - ((index % 5) * 11);
@@ -340,25 +340,23 @@ function renderObfuscatedCredit() {
   const message = decodeObfuscatedCredit();
   const ratio = Math.max(1, Math.floor(window.devicePixelRatio || 1));
   const width = footerCreditCanvas.clientWidth || 960;
-  const height = 32;
+  const height = 24;
 
   footerCreditCanvas.width = width * ratio;
   footerCreditCanvas.height = height * ratio;
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "rgba(8, 16, 32, 0.24)";
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.font = '500 11px "Inter", sans-serif';
+  ctx.clearRect(0, 0, width, height);
+  ctx.font = '500 10px "Inter", sans-serif';
   ctx.textBaseline = "middle";
   ctx.textAlign = "center";
 
   const x = width / 2;
   const y = height / 2;
-  ctx.fillStyle = "rgba(148, 163, 184, 0.15)";
+  ctx.fillStyle = "rgba(148, 163, 184, 0.12)";
   ctx.fillText(message, x + 1, y + 1);
-  ctx.fillStyle = "rgba(148, 163, 184, 0.62)";
+  ctx.fillStyle = "rgba(148, 163, 184, 0.52)";
   ctx.fillText(message, x, y);
 }
 
