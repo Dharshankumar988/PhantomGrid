@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhantomGrid</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="min-h-screen text-slate-100">
+  <div class="background-grid"></div>
+  <div class="ambient-blobs" aria-hidden="true">
+    <span class="blob blob-cyan"></span>
+    <span class="blob blob-purple"></span>
+    <span class="blob blob-green"></span>
+  </div>
+  <main class="relative z-10 mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
+    <header class="mb-8 text-center md:mb-10">
+      <p class="tracking-[0.35em] text-cyan-300/80 text-xs md:text-sm">THREAT INTELLIGENCE COMMAND</p>
+      <h1 class="title-glow text-4xl font-extrabold md:text-6xl">PhantomGrid</h1>
+      <p class="mt-3 text-sm text-slate-300 md:text-base">Aggregate intelligence from AbuseIPDB, VirusTotal, OTX, and Geolocation APIs</p>
+      <div class="mx-auto mt-4 flex w-full max-w-xl flex-wrap items-center justify-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-300">
+        <span class="pill">AbuseIPDB</span>
+        <span class="pill">VirusTotal</span>
+        <span class="pill">AlienVault OTX</span>
+        <span class="pill">IP Geolocation</span>
+      </div>
+    </header>
+
+    <section class="glass-panel mb-8 p-4 md:mb-10 md:p-6">
+      <div class="scan-line" aria-hidden="true"></div>
+      <form id="scanForm" class="grid gap-4 md:grid-cols-[1fr_auto]">
+        <input
+          id="targetInput"
+          type="text"
+          placeholder="Enter IP, domain, or URL (example: 8.8.8.8, example.com, https://example.com/login)"
+          class="w-full rounded-xl border border-cyan-500/30 bg-slate-900/60 px-4 py-3 outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/40"
+          required
+        />
+        <button
+          id="analyzeBtn"
+          type="submit"
+          class="cyber-btn rounded-xl px-6 py-3 text-sm font-semibold uppercase tracking-wider"
+        >
+          Analyze Target
+        </button>
+      </form>
+
+      <div id="loading" class="mt-4 hidden items-center gap-3 text-cyan-200">
+        <div class="spinner"></div>
+        <span class="text-sm tracking-wide">Analyzing threat intelligence streams...</span>
+      </div>
+
+      <p id="errorText" class="mt-4 hidden rounded-lg border border-rose-500/40 bg-rose-900/20 px-3 py-2 text-sm text-rose-200"></p>
+    </section>
+
+    <section id="results" class="hidden space-y-5 fade-in">
+      <article id="alertBanner" class="hidden rounded-xl border border-rose-500/40 bg-rose-950/35 px-4 py-3 text-sm text-rose-100 shadow-[0_0_24px_rgba(251,113,133,0.28)]">
+        <span class="font-semibold tracking-wide">Critical Alert:</span>
+        <span class="ml-1">Threat score exceeded high-risk threshold.</span>
+      </article>
+
+      <div class="grid gap-5 lg:grid-cols-3">
+        <article id="riskCard" class="glass-panel p-5">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="section-title">Risk Score</h2>
+            <span id="analyzedTarget" class="target-pill">Awaiting input</span>
+          </div>
+          <div class="mt-4 flex items-center justify-center">
+            <div id="riskRing" class="risk-ring">
+              <div>
+                <p id="riskScore" class="text-4xl font-extrabold">0</p>
+                <p id="riskLevel" class="text-xs tracking-[0.2em]">LOW</p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="glass-panel p-5">
+          <h2 class="section-title">Detection Count</h2>
+          <p id="detectionText" class="mt-4 text-lg font-semibold">0 / 0 engines flagged</p>
+          <div class="mt-4 h-3 overflow-hidden rounded-full bg-slate-800">
+            <div id="detectionBar" class="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-700" style="width: 0%"></div>
+          </div>
+          <p class="mt-3 text-xs tracking-wider text-slate-400">Engine ratio and reputation hit density</p>
+        </article>
+
+        <article class="glass-panel p-5">
+          <h2 class="section-title">Confidence Score</h2>
+          <p id="confidenceValue" class="mt-4 text-lg font-semibold">0%</p>
+          <div class="mt-4 h-3 overflow-hidden rounded-full bg-slate-800">
+            <div id="confidenceBar" class="h-full rounded-full bg-gradient-to-r from-fuchsia-400 to-cyan-400 transition-all duration-700" style="width: 0%"></div>
+          </div>
+          <p class="mt-3 text-xs tracking-wider text-slate-400">Signal quality from report, detection, and pulse volume</p>
+        </article>
+      </div>
+
+      <div class="grid gap-5 lg:grid-cols-2">
+        <article class="glass-panel p-5">
+          <h2 class="section-title">Threat Categories</h2>
+          <div id="categoryTags" class="mt-4 flex flex-wrap gap-2"></div>
+        </article>
+
+        <article class="glass-panel p-5">
+          <h2 class="section-title">Summary</h2>
+          <p id="summaryText" class="summary-panel mt-4 rounded-xl border border-cyan-500/40 p-4 text-sm leading-relaxed text-cyan-50"></p>
+        </article>
+      </div>
+
+      <div class="grid gap-5 lg:grid-cols-2">
+        <article class="glass-panel p-5">
+          <h2 class="section-title">Geolocation</h2>
+          <div class="mt-4 space-y-3 text-sm">
+            <div class="geo-item"><span class="geo-label">COUNTRY</span><span id="geoCountry">-</span></div>
+            <div class="geo-item"><span class="geo-label">CITY</span><span id="geoCity">-</span></div>
+            <div class="geo-item"><span class="geo-label">ISP</span><span id="geoISP">-</span></div>
+          </div>
+        </article>
+
+        <article class="glass-panel p-5">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="section-title">Threat Map</h2>
+            <button id="toggleMapBtn" type="button" class="map-btn">Expand Map</button>
+          </div>
+          <div id="mapShell" class="map-shell mt-4">
+            <div id="map" class="h-64 w-full rounded-xl border border-slate-400/40"></div>
+          </div>
+          <div id="mapLegend" class="mt-3 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-slate-300">
+            <span class="legend-dot legend-low"></span><span>Low</span>
+            <span class="legend-dot legend-medium"></span><span>Medium</span>
+            <span class="legend-dot legend-high"></span><span>High</span>
+          </div>
+          <p id="mapMeta" class="mt-2 text-xs text-slate-400">No target plotted yet.</p>
+        </article>
+      </div>
+
+      <article class="glass-panel p-5">
+        <h2 class="section-title">Recent Scan History</h2>
+        <div id="historyList" class="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1 text-sm text-slate-200"></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/static/script.js"></script>
+</body>
+</html>
