@@ -281,17 +281,43 @@ function buildHistoryRow(item) {
 
   const row = document.createElement("div");
   row.className = "history-row";
-  row.innerHTML = `
-    <div class="history-top">
-      <p class="history-target" title="${data.target}">${data.target}</p>
-      <span class="history-risk ${getRiskChipClass(data.riskLevel)}">${data.riskLevel} ${data.riskScore}</span>
-    </div>
-    <div class="history-meta">
-      <span class="history-chip">Detection ${data.malicious}/${data.totalEngines} (${ratio}%)</span>
-      <span class="history-chip">Confidence ${data.confidence}%</span>
-      <span class="history-chip">${toDisplayTime(data.createdAt)}</span>
-    </div>
-  `;
+
+  const top = document.createElement("div");
+  top.className = "history-top";
+
+  const target = document.createElement("p");
+  target.className = "history-target";
+  target.textContent = data.target;
+  target.title = data.target;
+
+  const risk = document.createElement("span");
+  risk.className = `history-risk ${getRiskChipClass(data.riskLevel)}`;
+  risk.textContent = `${data.riskLevel} ${data.riskScore}`;
+
+  top.appendChild(target);
+  top.appendChild(risk);
+
+  const meta = document.createElement("div");
+  meta.className = "history-meta";
+
+  const detectionChip = document.createElement("span");
+  detectionChip.className = "history-chip";
+  detectionChip.textContent = `Detection ${data.malicious}/${data.totalEngines} (${ratio}%)`;
+
+  const confidenceChip = document.createElement("span");
+  confidenceChip.className = "history-chip";
+  confidenceChip.textContent = `Confidence ${data.confidence}%`;
+
+  const timeChip = document.createElement("span");
+  timeChip.className = "history-chip history-time";
+  timeChip.textContent = toDisplayTime(data.createdAt);
+
+  meta.appendChild(detectionChip);
+  meta.appendChild(confidenceChip);
+  meta.appendChild(timeChip);
+
+  row.appendChild(top);
+  row.appendChild(meta);
   return row;
 }
 
@@ -314,33 +340,33 @@ function renderObfuscatedCredit() {
   const message = decodeObfuscatedCredit();
   const ratio = Math.max(1, Math.floor(window.devicePixelRatio || 1));
   const width = obfCreditCanvas.clientWidth || 720;
-  const height = 54;
+  const height = 36;
 
   obfCreditCanvas.width = width * ratio;
   obfCreditCanvas.height = height * ratio;
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "rgba(15, 23, 42, 0.58)";
+  ctx.fillStyle = "rgba(15, 23, 42, 0.38)";
   ctx.fillRect(0, 0, width, height);
 
-  ctx.font = '700 13px "Orbitron", sans-serif';
+  ctx.font = '600 11px "Orbitron", sans-serif';
   ctx.textBaseline = "middle";
 
-  ctx.fillStyle = "rgba(56, 189, 248, 0.22)";
-  for (let i = 0; i < 6; i += 1) {
-    ctx.fillRect(0, i * 9 + 1, width, 1);
+  ctx.fillStyle = "rgba(148, 163, 184, 0.14)";
+  for (let i = 0; i < 4; i += 1) {
+    ctx.fillRect(0, i * 9 + 3, width, 1);
   }
 
   const x = 16;
   const y = height / 2;
-  ctx.fillStyle = "rgba(255, 92, 138, 0.45)";
+  ctx.fillStyle = "rgba(244, 114, 182, 0.2)";
   ctx.fillText(message, x + 1, y + 1);
-  ctx.fillStyle = "rgba(57, 216, 255, 0.85)";
+  ctx.fillStyle = "rgba(148, 163, 184, 0.66)";
   ctx.fillText(message, x, y);
 
-  ctx.fillStyle = "rgba(186, 230, 253, 0.28)";
-  for (let i = 0; i < 22; i += 1) {
+  ctx.fillStyle = "rgba(186, 230, 253, 0.15)";
+  for (let i = 0; i < 10; i += 1) {
     const px = Math.floor(Math.random() * width);
     const py = Math.floor(Math.random() * height);
     ctx.fillRect(px, py, 1, 1);
