@@ -37,5 +37,8 @@ def get_supabase_client() -> Optional[Client]:
     if SUPABASE_URL == "your_url" or SUPABASE_KEY == "your_key":
         return None
 
-    _supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    return _supabase_client
+    try:
+        _supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        return _supabase_client
+    except Exception:
+        return None
