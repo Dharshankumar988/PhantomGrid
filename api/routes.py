@@ -73,6 +73,58 @@ MOCK_THREAT_PROFILES: dict[str, dict[str, Any]] = {
             "longitude": 4.9041,
         },
     },
+    "credential-reset-secure.phantomgrid.test": {
+        "risk_score": 90,
+        "confidence_score": 87,
+        "threat_categories": ["Phishing", "Credential Theft"],
+        "detection": {"malicious": 54, "total_engines": 70},
+        "geolocation": {
+            "country": "United Kingdom",
+            "city": "London",
+            "isp": "Mock Identity Relay",
+            "latitude": 51.5072,
+            "longitude": -0.1276,
+        },
+    },
+    "crypto-drainer-wallet.phantomgrid.test": {
+        "risk_score": 93,
+        "confidence_score": 88,
+        "threat_categories": ["Scam", "Crypto Theft", "Malware"],
+        "detection": {"malicious": 57, "total_engines": 70},
+        "geolocation": {
+            "country": "Singapore",
+            "city": "Singapore",
+            "isp": "Mock Blockchain Sink",
+            "latitude": 1.3521,
+            "longitude": 103.8198,
+        },
+    },
+    "ransom-note-portal.phantomgrid.test": {
+        "risk_score": 96,
+        "confidence_score": 92,
+        "threat_categories": ["Ransomware", "Extortion", "Malware"],
+        "detection": {"malicious": 66, "total_engines": 70},
+        "geolocation": {
+            "country": "Russia",
+            "city": "Moscow",
+            "isp": "Mock Ransom Relay",
+            "latitude": 55.7558,
+            "longitude": 37.6173,
+        },
+    },
+    "zero-day-dropper.phantomgrid.test": {
+        "risk_score": 94,
+        "confidence_score": 90,
+        "threat_categories": ["Exploit", "Dropper", "Malware"],
+        "detection": {"malicious": 61, "total_engines": 70},
+        "geolocation": {
+            "country": "Sweden",
+            "city": "Stockholm",
+            "isp": "Mock Exploit CDN",
+            "latitude": 59.3293,
+            "longitude": 18.0686,
+        },
+    },
 }
 
 
