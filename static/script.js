@@ -244,7 +244,55 @@ function formatHistoryItem(item) {
   const usedInput = item.source_input && String(item.source_input).trim().length > 0
     ? item.source_input
     : item.target;
-  return `${usedInput} | ${item.risk_level} (${item.risk_score}) | ${item.detection?.malicious || 0}/${item.detection?.total_engines || 0}`;
+  return {
+    target: usedInput,
+    riskLevel: String(item.risk_level || "UNKNOWN").toUpperCase(),
+    riskScore: Number(item.risk_score || 0),
+    malicious: Number(item.detection?.malicious || 0),
+    totalEngines: Number(item.detection?.total_engines || 0),
+    confidence: Number(item.confidence_score || 0),
+    createdAt: item.created_at || item.timestamp || null,
+  };
+}
+
+function getRiskChipClass(riskLevel) {
+  if (riskLevel === "HIGH") return "risk-chip-high";
+  if (riskLevel === "MEDIUM") return "risk-chip-medium";
+  return "risk-chip-low";
+}
+
+function toDisplayTime(isoValue) {
+  if (!isoValue) return "Time unavailable";
+  const parsed = new Date(isoValue);
+  if (Number.isNaN(parsed.getTime())) return "Time unavailable";
+
+  return parsed.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function buildHistoryRow(item) {
+  const data = formatHistoryItem(item);
+  const ratio = data.totalEngines > 0 ? ((data.malicious / data.totalEngines) * 100).toFixed(0) : "0";
+
+  const row = document.createElement("div");
+  row.className = "history-row";
+  row.innerHTML = `
+    <div class="history-top">
+      <p class="history-target" title="${data.target}">${data.target}</p>
+      <span class="history-risk ${getRiskChipClass(data.riskLevel)}">${data.riskLevel} ${data.riskScore}</span>
+    </div>
+    <div class="history-meta">
+      <span class="history-chip">Detection ${data.malicious}/${data.totalEngines} (${ratio}%)</span>
+      <span class="history-chip">Confidence ${data.confidence}%</span>
+      <span class="history-chip">${toDisplayTime(data.createdAt)}</span>
+    </div>
+  `;
+  return row;
 }
 
 function decodeObfuscatedCredit() {
@@ -312,10 +360,7 @@ async function loadHistory() {
     }
 
     data.forEach((item) => {
-      const row = document.createElement("div");
-      row.className = "rounded-lg border border-slate-700/60 bg-slate-900/40 px-3 py-2";
-      row.textContent = formatHistoryItem(item);
-      historyList.appendChild(row);
+      historyList.appendChild(buildHistoryRow(item));
     });
   } catch (err) {
     historyList.innerHTML = '<p class="text-slate-400">History unavailable.</p>';
