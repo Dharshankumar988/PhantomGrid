@@ -10,7 +10,7 @@ const analyzedTarget = document.getElementById("analyzedTarget");
 const mapMeta = document.getElementById("mapMeta");
 const toggleMapBtn = document.getElementById("toggleMapBtn");
 const mapShell = document.getElementById("mapShell");
-const obfCreditCanvas = document.getElementById("obfCreditCanvas");
+const footerCreditCanvas = document.getElementById("footerCreditCanvas");
 
 let map;
 let marker;
@@ -322,55 +322,44 @@ function buildHistoryRow(item) {
 }
 
 function decodeObfuscatedCredit() {
-  const payload = [28, 45, 59, 211, 8, 57, 53, 40, 29, 230, 51, 26, 42, 15, 13, 35, 24, 59, 11, 20, 180, 232, 228, 253, 30, 240, 243, 242, 29, 253, 255, 215, 221, 223, 32, 131, 235];
+  const payload = [27, 41, 27, 38, 203, 220, 218, 213, 51, 228, 26, 239, 248, 235, 211, 4, 241, 59, 4, 40, 247, 11, 7, 220, 16, 238, 234, 20, 61, 12, 39, 54, 57, 57, 242, 224, 58, 34, 32, 14, 68, 185, 82, 108, 144, 167, 88, 79, 139, 93, 95, 157, 126, 73, 68, 106, 205, 179, 168, 167, 204, 361, 395, 400, 427, 317, 369, 434, 327, 409, 322, 323, 344, 417, 418, 376, 327, 375, 334, 420, 359, 353, 326, 272, 314, 377, 271, 278, 295, 298, 276, 277, 311, 485, 270, 288, 293, 316];
   return payload
     .map((value, index) => {
-      const decoded = ((value ^ (73 + index * 3)) - 17 - ((index % 5) * 11) + 1270) % 127;
+      const decoded = (value ^ (73 + index * 3)) - 17 - ((index % 5) * 11);
       return String.fromCharCode(decoded);
     })
     .join("");
 }
 
 function renderObfuscatedCredit() {
-  if (!obfCreditCanvas) return;
+  if (!footerCreditCanvas) return;
 
-  const ctx = obfCreditCanvas.getContext("2d");
+  const ctx = footerCreditCanvas.getContext("2d");
   if (!ctx) return;
 
   const message = decodeObfuscatedCredit();
   const ratio = Math.max(1, Math.floor(window.devicePixelRatio || 1));
-  const width = obfCreditCanvas.clientWidth || 720;
-  const height = 36;
+  const width = footerCreditCanvas.clientWidth || 960;
+  const height = 32;
 
-  obfCreditCanvas.width = width * ratio;
-  obfCreditCanvas.height = height * ratio;
+  footerCreditCanvas.width = width * ratio;
+  footerCreditCanvas.height = height * ratio;
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "rgba(15, 23, 42, 0.38)";
+  ctx.fillStyle = "rgba(8, 16, 32, 0.24)";
   ctx.fillRect(0, 0, width, height);
 
-  ctx.font = '600 11px "Orbitron", sans-serif';
+  ctx.font = '500 11px "Inter", sans-serif';
   ctx.textBaseline = "middle";
+  ctx.textAlign = "center";
 
-  ctx.fillStyle = "rgba(148, 163, 184, 0.14)";
-  for (let i = 0; i < 4; i += 1) {
-    ctx.fillRect(0, i * 9 + 3, width, 1);
-  }
-
-  const x = 16;
+  const x = width / 2;
   const y = height / 2;
-  ctx.fillStyle = "rgba(244, 114, 182, 0.2)";
+  ctx.fillStyle = "rgba(148, 163, 184, 0.15)";
   ctx.fillText(message, x + 1, y + 1);
-  ctx.fillStyle = "rgba(148, 163, 184, 0.66)";
+  ctx.fillStyle = "rgba(148, 163, 184, 0.62)";
   ctx.fillText(message, x, y);
-
-  ctx.fillStyle = "rgba(186, 230, 253, 0.15)";
-  for (let i = 0; i < 10; i += 1) {
-    const px = Math.floor(Math.random() * width);
-    const py = Math.floor(Math.random() * height);
-    ctx.fillRect(px, py, 1, 1);
-  }
 }
 
 async function loadHistory() {
