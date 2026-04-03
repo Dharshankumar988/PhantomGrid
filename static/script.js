@@ -10,6 +10,7 @@ const analyzedTarget = document.getElementById("analyzedTarget");
 const mapMeta = document.getElementById("mapMeta");
 const toggleMapBtn = document.getElementById("toggleMapBtn");
 const mapShell = document.getElementById("mapShell");
+const obfCreditCanvas = document.getElementById("obfCreditCanvas");
 
 let map;
 let marker;
@@ -246,6 +247,58 @@ function formatHistoryItem(item) {
   return `${usedInput} | ${item.risk_level} (${item.risk_score}) | ${item.detection?.malicious || 0}/${item.detection?.total_engines || 0}`;
 }
 
+function decodeObfuscatedCredit() {
+  const payload = [28, 45, 59, 211, 8, 57, 53, 40, 29, 230, 51, 26, 42, 15, 13, 35, 24, 59, 11, 20, 180, 232, 228, 253, 30, 240, 243, 242, 29, 253, 255, 215, 221, 223, 32, 131, 235];
+  return payload
+    .map((value, index) => {
+      const decoded = ((value ^ (73 + index * 3)) - 17 - ((index % 5) * 11) + 1270) % 127;
+      return String.fromCharCode(decoded);
+    })
+    .join("");
+}
+
+function renderObfuscatedCredit() {
+  if (!obfCreditCanvas) return;
+
+  const ctx = obfCreditCanvas.getContext("2d");
+  if (!ctx) return;
+
+  const message = decodeObfuscatedCredit();
+  const ratio = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+  const width = obfCreditCanvas.clientWidth || 720;
+  const height = 54;
+
+  obfCreditCanvas.width = width * ratio;
+  obfCreditCanvas.height = height * ratio;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "rgba(15, 23, 42, 0.58)";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.font = '700 13px "Orbitron", sans-serif';
+  ctx.textBaseline = "middle";
+
+  ctx.fillStyle = "rgba(56, 189, 248, 0.22)";
+  for (let i = 0; i < 6; i += 1) {
+    ctx.fillRect(0, i * 9 + 1, width, 1);
+  }
+
+  const x = 16;
+  const y = height / 2;
+  ctx.fillStyle = "rgba(255, 92, 138, 0.45)";
+  ctx.fillText(message, x + 1, y + 1);
+  ctx.fillStyle = "rgba(57, 216, 255, 0.85)";
+  ctx.fillText(message, x, y);
+
+  ctx.fillStyle = "rgba(186, 230, 253, 0.28)";
+  for (let i = 0; i < 22; i += 1) {
+    const px = Math.floor(Math.random() * width);
+    const py = Math.floor(Math.random() * height);
+    ctx.fillRect(px, py, 1, 1);
+  }
+}
+
 async function loadHistory() {
   try {
     const response = await fetch("/history?limit=10");
@@ -307,6 +360,8 @@ form.addEventListener("submit", async (event) => {
 });
 
 loadHistory();
+renderObfuscatedCredit();
+window.addEventListener("resize", renderObfuscatedCredit);
 
 toggleMapBtn.addEventListener("click", toggleMapFullscreen);
 document.addEventListener("fullscreenchange", () => {

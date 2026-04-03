@@ -279,6 +279,22 @@ body {
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(176, 107, 255, 0.08));
 }
 
+.obf-credit-wrap {
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 0.8rem;
+  background: linear-gradient(125deg, rgba(8, 47, 73, 0.28), rgba(51, 65, 85, 0.22));
+  overflow: hidden;
+}
+
+.obf-credit-canvas {
+  display: block;
+  width: 100%;
+  height: 54px;
+  image-rendering: pixelated;
+  user-select: none;
+  pointer-events: none;
+}
+
 .geo-item {
   display: flex;
   align-items: center;
