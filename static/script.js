@@ -302,16 +302,15 @@ function initializeGlobe() {
 
   const globe = Globe()(globeContainer)
     .backgroundColor("#04070f")
-    .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
+    .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-dark.jpg")
     .bumpImageUrl("https://unpkg.com/three-globe/example/img/earth-topology.png")
-    .showAtmosphere(true)
+    .showAtmosphere(false)
     .showGraticules(true)
-    .atmosphereColor("#7aa8ff")
-    .atmosphereAltitude(0.1)
     .pointLat((d) => d.lat)
     .pointLng((d) => d.lng)
     .pointAltitude((d) => d.altitude)
     .pointRadius((d) => d.radius)
+    .pointResolution(3)
     .pointColor((d) => d.color)
     .onPointHover((point, prevPoint) => {
       if (prevPoint && prevPoint.__el) prevPoint.__el.classList.remove("hovered");
